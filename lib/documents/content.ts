@@ -92,11 +92,7 @@ export function pageAt(pages: Segment[], offset: number): number | null {
   return pages.length && lo < pages.length ? lo + 1 : pages.length || null;
 }
 
-/**
- * Step 7 of verification: turn text offsets into render positions. Each
- * segment is cut at page boundaries so the viewer can highlight one page at a
- * time (PRD B1.5).
- */
+
 export function toStoredMatch(match: QuoteMatch, pages: Segment[], text: string): StoredMatch {
   const segments: StoredSegment[] = [];
   for (const segment of match.segments) {

@@ -1,11 +1,7 @@
 import type { Segment } from "../text/normalize";
 import type { AnswerMode, Coverage, DocCoverage } from "../types";
 
-/**
- * What the model was actually given, tracked in code (PRD A4.3). The coverage
- * line under an answer and the right to say "not in the document" both come
- * from this record, never from what the model says it read.
- */
+
 
 export interface ChunkRef extends Segment {
   ordinal: number;
@@ -175,10 +171,7 @@ function readPhrase(doc: DocCoverage, complete: boolean, capital: boolean): stri
   return `${capital ? "Read " : ""}${doc.read.length} of ${doc.total} ${plural(doc.total, doc.unit)}`;
 }
 
-/**
- * The lines shown under an answer, e.g. "Read 9 of 150 pages (targeted search)"
- * or "Lease A: all 40 pages · Lease B: 12 of 90 pages" (PRD A4.3, B2.7).
- */
+
 export function formatCoverage(coverage: Coverage): string[] {
   const lines: string[] = [];
   const many = coverage.documents.length > 1;

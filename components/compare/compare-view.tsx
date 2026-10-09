@@ -70,8 +70,6 @@ function clauseLabel(side: ClauseSide | null): string {
   return [number, side.heading].filter(Boolean).join(" ") || "Untitled clause";
 }
 
-/** Word-level highlights inside the clause (PRD B3.8). */
-/** PDF line breaks are layout, not meaning: join lines, keep paragraph breaks. */
 function reflow(text: string): string {
   return text
     .split(/\n\s*\n/)

@@ -1,12 +1,3 @@
-/**
- * Reads the text of a DOCX's HTML the same way on the server (linkedom, at
- * ingestion) and in the browser (the rendered viewer). Because both run this
- * one function over the same HTML, an offset in the stored text is an offset
- * into the viewer's text nodes, which is how a verified quote becomes a
- * highlight (PRD A1.3, B1.7).
- */
-
-/** The parts of the DOM this needs; satisfied by both browser nodes and linkedom nodes. */
 export interface TextWalkNode {
   nodeType: number;
   nodeName: string;

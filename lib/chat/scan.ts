@@ -6,12 +6,7 @@ import { displaySlice, verifyQuote, type VerifiableDoc } from "../verify/quote";
 import type { ChunkRow } from "./chunks";
 import { SCAN_CORRECTION, chunkLabel, scanSystemPrompt, scanUserPrompt, type PromptDoc, type ScanExcerpt } from "./prompts";
 
-/**
- * Full scan, map step (PRD A4.5, A4.6): every chunk of a document goes to the
- * model in batches, in parallel. Each batch returns quotes or NONE. Quotes are
- * verified here, so only real document text reaches the step that writes the
- * answer. A batch that fails is recorded, never silently skipped.
- */
+
 
 export interface ScanDoc extends PromptDoc {
   id: string;

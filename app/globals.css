@@ -1,9 +1,6 @@
 @import "tailwindcss";
 
-/*
- * Neutral palette with one accent. Verified is green and unverified amber,
- * always paired with an icon and a label (PRD "Visual direction").
- */
+
 :root {
   --bg: #f7f7f5;
   --surface: #ffffff;

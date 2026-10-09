@@ -5,10 +5,6 @@ import { normalizeWithMap, type Segment } from "@/lib/text/normalize";
 import { PAGE_SEPARATOR } from "@/lib/text/pdftext";
 import type { Box } from "./types";
 
-/**
- * Turns text offsets into boxes on screen (PRD B1.3–B1.5): a DOM Range over
- * the rendered text nodes, drawn from Range.getClientRects(), one box per line.
- */
 
 export interface RenderedText {
   text: string;
@@ -71,10 +67,7 @@ export function rangeFor(rendered: RenderedText, segment: Segment): Range | null
   return range;
 }
 
-/**
- * Fallback when the rendered text doesn't match the stored text: find the
- * quote's own words in what is on screen (PRD "Where it can fail").
- */
+
 export function findInRendered(rendered: RenderedText, quote: string): Segment[] {
   const page = normalizeWithMap(rendered.text);
   const found: Segment[] = [];

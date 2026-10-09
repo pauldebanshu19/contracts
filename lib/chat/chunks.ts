@@ -23,7 +23,6 @@ export interface RankedChunk extends ChunkRow {
 }
 
 export interface ChunkStore {
-  /** Best-matching chunks for a natural-language query, searching the whole document (PRD A4.2). */
   search(documentId: string, query: string, limit: number): Promise<RankedChunk[]>;
   /** Every chunk in document order. */
   all(documentId: string): Promise<ChunkRow[]>;

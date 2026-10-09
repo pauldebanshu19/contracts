@@ -1,11 +1,3 @@
-/**
- * Streaming parser for model output (PRD A3.1, A3.2, A3.5, A3.8).
- *
- * Text between `<cite ...>` and `</cite>` is held back and never emitted as
- * text: the only way a quote leaves this parser is as a `cite` event, which the
- * caller verifies before anything reaches the browser.
- */
-
 export type AnswerStatus = "answered" | "partial" | "not_found";
 
 export type CiteEvent =

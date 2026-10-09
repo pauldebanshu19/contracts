@@ -19,22 +19,12 @@ import {
 import { allOf, scanInto, type AnswerContext, type AnswerSettings, type ModeResult, type Run, type RunDoc } from "./run";
 import { streamModel, type VerifyFn } from "./stream";
 
-/**
- * Answers one question (PRD A4, B2, Part C).
- *
- * Two rules are enforced here in code, whatever the model says:
- *  1. "Not found" is never the final answer unless every readable page was
- *     read. A partial read that finds nothing escalates to a full scan first.
- *  2. If some pages could not be read, the answer cannot claim absence.
- */
+
 
 const TARGETED_CHUNKS = 8;
 const MAX_TARGETED_TOTAL = 16;
 
-/**
- * Questions that ask for every instance, or whether something exists, can only
- * be answered by reading everything (PRD A4.7).
- */
+
 const EXHAUSTIVE = new RegExp(
   [
     "\\b(every|all|any|each|anywhere|nowhere|entire|whole|throughout)\\b",
@@ -104,7 +94,7 @@ async function retrieve(run: Run): Promise<Map<string, ChunkRow[]>> {
   const query = retrievalQuery(run.ctx);
   const ranked = new Map<string, ChunkRow[]>();
 
-  // Each document is searched on its own, so none is crowded out by another (PRD B2.2).
+  
   await Promise.all(
     run.docs.map(async (doc) => {
       const hits = await run.ctx.chunks.search(doc.id, query, perDoc);
@@ -182,7 +172,7 @@ async function runTargeted(run: Run): Promise<ModeResult & { intercepted?: boole
   if (result.intercepted) return { status: "not_found", intercepted: true };
   if (result.aborted) return { status: result.status ?? "answered", aborted: true };
 
-  // The model answered but ignored the quote format: one retry with a reminder (PRD "Risks").
+
   if (result.status !== "not_found" && result.cites === 0 && ctx.writer.text_.trim()) {
     messages.push({ role: "assistant", content: result.raw }, { role: "user", content: FORMAT_REMINDER });
     ctx.writer.reset("targeted");
@@ -322,7 +312,6 @@ export async function answerQuestion(ctx: AnswerContext): Promise<void> {
         result = await runResearch(run);
       } catch (error) {
         if (!(error instanceof LlmToolsUnsupportedError)) throw error;
-        // The provider refused tool calling: answer with the plain pipeline and say so (PRD Part C).
         mode = "targeted";
         ctx.writer.reset("targeted");
         extras = { note: "Research mode isn't available with this model, so this answer used a single targeted search" };

@@ -78,7 +78,6 @@ function batchLabel(batch: ScanBatch, many: boolean): string {
   return `${prefix}Reading sections ${first.ordinal + 1}–${last.ordinal + 1}…`;
 }
 
-/** Read every chunk of the given documents and record what was and wasn't read (PRD A4.5, A4.6). */
 export async function scanInto(run: Run, docs: RunDoc[], question: string): Promise<ScanResult> {
   const { ctx, tracker, settings } = run;
   const scanDocs: ScanDoc[] = docs.map((d) => ({

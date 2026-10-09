@@ -13,7 +13,7 @@ async function docSummary(id: string) {
   return row;
 }
 
-/** A comparison with its changes and, for each change, the text of both clauses (PRD B3.6–B3.8). */
+
 export async function GET(_request: Request, ctx: RouteContext<"/api/comparisons/[id]">) {
   await ready();
   const { id } = await ctx.params;

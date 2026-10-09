@@ -3,13 +3,7 @@ import type { AnswerStatus, CitationDTO } from "../types";
 import { CiteStreamParser, PageRefScrubber, type CiteEvent } from "../verify/cite-stream";
 import type { AnswerWriter } from "./writer";
 
-/**
- * Runs one model call and feeds its output to the answer writer. This is the
- * only path from model text to the browser, and quotes cross it only as
- * verified (or explicitly unverified) citations (PRD A3.2).
- */
 
-/** The model's own wording travels with the result so it can be stored, but it is never sent to the browser. */
 export type VerifyFn = (alias: string | null, quote: string) => Omit<CitationDTO, "ordinal"> & { modelQuote: string };
 
 export interface StreamOptions {
@@ -18,17 +12,9 @@ export interface StreamOptions {
   writer: AnswerWriter;
   verify: VerifyFn;
   signal: AbortSignal;
-  /**
-   * Called as soon as the status tag is read, before anything is shown.
-   * Returning true stops the call and discards its output: this is how a
-   * "not found" from a partial read is kept away from the user (PRD A4.4).
-   */
+
   intercept?: (status: AnswerStatus) => boolean;
-  /**
-   * While tools are on offer, text that doesn't start with a status tag is the
-   * model thinking aloud before a tool call. It is held, and dropped if tool
-   * calls follow.
-   */
+  
   holdUntilStatus?: boolean;
 }
 

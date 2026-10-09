@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-/** Server configuration, read from the environment (PRD "Non-functional requirements"). */
 
 const number = (fallback: number, min = 1) =>
   z.preprocess((v) => (v === undefined || v === "" ? fallback : Number(v)), z.number().int().min(min));

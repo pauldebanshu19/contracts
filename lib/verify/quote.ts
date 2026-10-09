@@ -1,13 +1,5 @@
 import { keyRangeToOriginal, normalizeWithMap, type NormalizedText, type Segment } from "../text/normalize";
 
-/**
- * Quote verification (PRD "Quote verification").
- *
- * A quote is verified only if its normalised form is found in the claimed
- * document's normalised text. There is no fuzzy matching: one changed, added
- * or missing word fails. What the user is shown is the document's own text at
- * the matched location, never the model's copy.
- */
 
 /** Keys shorter than this prove nothing ("the Supplier shall"). */
 export const MIN_KEY_LENGTH = 25;

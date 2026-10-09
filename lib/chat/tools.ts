@@ -8,11 +8,7 @@ import { formatRanges } from "./coverage";
 import { chunkLabel } from "./prompts";
 import { scanInto, type Run, type RunDoc } from "./run";
 
-/**
- * The five research tools (PRD Part C). Every call is validated before it
- * runs, and every failure comes back to the model as a message it can act on:
- * a bad call never throws out of the loop.
- */
+
 
 const SNIPPET_CHARS = 400;
 const MAX_OUTLINE_LINES = 250;

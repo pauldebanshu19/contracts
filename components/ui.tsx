@@ -77,7 +77,6 @@ export function docColor(alias: string | null | undefined): string {
   return DOC_COLORS[(Math.max(1, n) - 1) % DOC_COLORS.length];
 }
 
-/** The colour-coded document label used in multi-document chats (PRD B2.6). */
 export function DocBadge({ alias, name, className }: { alias: string | null; name?: string; className?: string }) {
   const tag = (
     <span className="shrink-0 rounded px-1.5 py-0.5 text-[11px] font-semibold leading-4 text-white" style={{ background: docColor(alias) }}>

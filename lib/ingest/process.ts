@@ -7,12 +7,7 @@ import { extractDocx } from "./docx";
 import { IngestError, NEEDS_OCR_MESSAGE } from "./errors";
 import { extractPdf } from "./pdf";
 
-/**
- * The ingestion job (PRD A1.3 to A1.7): extract text, build the normalised key
- * and the chunk index, and only then mark the document ready. Any failure
- * leaves a specific message on the document; nothing is ever marked ready with
- * no text behind it.
- */
+
 
 const { documents, documentContent, chunks } = schema;
 

@@ -41,7 +41,6 @@ interface Props {
   onNavigateHome: () => void;
 }
 
-/** The library (PRD A1.8): dropzone, documents with status and progress, chats under each document. */
 export function Library({ documents, loadError, config, activeChatId, activeCompareId, onChanged, onOpenChat, onOpenCompare, onNavigateHome }: Props) {
   const [uploads, setUploads] = useState<Upload[]>([]);
   const [selected, setSelected] = useState<string[]>([]);

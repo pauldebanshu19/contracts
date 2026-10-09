@@ -12,7 +12,7 @@ export async function GET() {
   return Response.json({ documents: await listDocuments() });
 }
 
-/** Upload (PRD A1.1, A1.2): checked by extension, signature and size, then queued for processing. */
+
 export async function POST(request: Request) {
   await ready();
   const c = config();

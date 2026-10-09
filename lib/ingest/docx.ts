@@ -2,11 +2,7 @@ import { collectDomText } from "../text/domtext";
 import type { LineHint } from "../text/segment";
 import { IngestError } from "./errors";
 
-/**
- * DOCX extraction: mammoth to HTML, the HTML rebuilt from an allowlist, and
- * the text read from that HTML's text nodes. The viewer renders the same HTML,
- * so viewer and verifier read identical text (PRD "DOCX" row).
- */
+
 
 export interface DocxExtraction {
   html: string;

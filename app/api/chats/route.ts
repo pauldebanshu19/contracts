@@ -8,7 +8,7 @@ const body = z.object({
   documentIds: z.array(z.uuid()).min(1).max(MAX_DOCS_PER_CHAT),
 });
 
-/** A new chat bound to one document, or to 2–5 for a comparative question (PRD A2.4, B2.1). */
+
 export async function POST(request: Request) {
   await ready();
   const parsed = body.safeParse(await request.json().catch(() => null));

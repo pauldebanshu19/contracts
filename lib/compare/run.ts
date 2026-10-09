@@ -8,7 +8,7 @@ import { alignClauses, toVersionClauses } from "./align";
 import { significanceFloor } from "./significance";
 import { batches, guessCategory, overallSummary, ruleSummary, summariseBatch, summaryBatches, topChanges, type Change } from "./summarise";
 
-/** The comparison job (PRD B3): align, set rule floors, then let the model explain and rank. */
+
 
 const { comparisons, comparisonChanges } = schema;
 

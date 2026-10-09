@@ -3,14 +3,9 @@ import type { Segment } from "../text/normalize";
 import { PAGE_SEPARATOR, pageTextFromItems, type PdfTextItem } from "../text/pdftext";
 import { IngestError } from "./errors";
 
-/**
- * PDF text extraction with the same pdf.js version the browser viewer uses
- * (PRD B1.2). A page's text is its text items in order, each followed by a
- * line break when pdf.js marks the end of a line (see lib/text/pdftext.ts, which
- * the viewer shares).
- */
 
-/** A page with fewer non-space characters than this has no readable text (PRD A1.5). */
+
+
 export const MIN_PAGE_CHARS = 20;
 
 export interface PdfExtraction {

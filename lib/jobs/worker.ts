@@ -2,12 +2,7 @@ import { and, eq, isNull, lt, or, sql } from "drizzle-orm";
 import { db, ensureMigrated, schema } from "../db";
 import type { JobType } from "../db/schema";
 
-/**
- * Background jobs in the app's own process (PRD A1.4, "Reliability").
- *
- * Jobs live in Postgres, so a restart loses nothing: a job left "running" by a
- * dead process stops sending heartbeats and is put back in the queue.
- */
+
 
 const { jobs } = schema;
 

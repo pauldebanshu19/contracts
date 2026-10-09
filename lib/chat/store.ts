@@ -81,7 +81,7 @@ export async function loadChat(chatId: string): Promise<ChatDTO | null> {
   };
 }
 
-/** The last few turns as plain text, with verified quotes put back in their place (PRD A2.5). */
+
 export async function recentHistory(chatId: string, limit = 6): Promise<{ role: "user" | "assistant"; content: string }[]> {
   const rows = await db()
     .select({ id: messages.id, role: messages.role, content: messages.content, status: messages.status, createdAt: messages.createdAt })

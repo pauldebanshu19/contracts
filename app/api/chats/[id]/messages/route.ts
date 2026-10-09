@@ -20,14 +20,7 @@ const body = z.object({
 const encoder = new TextEncoder();
 const HEARTBEAT_MS = 15_000;
 
-/**
- * Ask a question; the answer streams back as Server-Sent Events (PRD A2.1).
- *
- * The assistant message is created before the first token and saved as it
- * grows (A2.3). If the browser goes away, by Stop, Esc, reload or closing the
- * tab, the request is aborted and what was written so far is saved with
- * status "stopped" (A2.2).
- */
+
 export async function POST(request: Request, ctx: RouteContext<"/api/chats/[id]/messages">) {
   await ready();
   const { id: chatId } = await ctx.params;

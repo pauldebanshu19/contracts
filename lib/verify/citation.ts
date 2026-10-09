@@ -1,12 +1,6 @@
 import type { Segment } from "../text/normalize";
 import { verifyQuote, type QuoteMatch, type VerifiableDoc } from "./quote";
 
-/**
- * Resolves a `<cite doc="D2">` to one document and verifies against that
- * document only (PRD B2.4). A quote that exists in a different selected
- * document than the one claimed stays unverified and says where it really is
- * (B2.5).
- */
 
 export interface CitationDoc {
   id: string;

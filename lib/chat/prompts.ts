@@ -2,11 +2,6 @@ import { sectionLabel } from "../text/segment";
 import type { ChatMessage } from "../llm/types";
 import type { ChunkRow } from "./chunks";
 
-/**
- * Prompts. Contract text always goes in as delimited data, and the model is
- * told so; even if a contract contains instructions, the worst they can do is
- * change the prose, because quotes are checked in code (PRD "Safety").
- */
 
 export interface PromptDoc {
   alias: string;
@@ -95,7 +90,7 @@ function joinList(items: string[]): string {
   return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
 }
 
-/** "You were shown sections §4, §12 and §18 of a 150-page document." (PRD "Large documents") */
+
 export function shownSummary(doc: PromptDoc, chunks: ChunkRow[], complete: boolean): string {
   if (complete) return `${doc.alias}: you were shown the whole ${doc.sizeLabel} document.`;
   if (!chunks.length) return `${doc.alias}: a search of this ${doc.sizeLabel} document found nothing relevant, so you were shown none of it.`;
@@ -147,7 +142,7 @@ export function reduceUserPrompt(docs: PromptDoc[], excerpts: ScanExcerpt[], que
   ].join("\n\n");
 }
 
-/** Earlier turns, with quotes folded back into plain text so follow-ups resolve (PRD A2.5). */
+
 export function historyMessages(history: { role: "user" | "assistant"; content: string }[]): ChatMessage[] {
   return history
     .filter((m) => m.content.trim())

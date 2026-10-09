@@ -5,18 +5,6 @@ import type { ModeResult, Run } from "./run";
 import { streamModel } from "./stream";
 import { ToolRunner, toolDefinitions } from "./tools";
 
-/**
- * Research mode (PRD Part C): the model decides what to read with five tools,
- * and this loop decides how long it may go on.
- *
- * It is a plain loop over the chat API rather than an agent framework, so the
- * limits are visible in one place:
- *  - at most `maxRounds` rounds, `maxCallsPerRound` tool calls each, and a token budget
- *  - a repeated call is answered with "already returned above"
- *  - three invalid calls in a row turn the tools off
- *  - at any limit, one last call without tools writes the answer from what was read
- * A bad tool call becomes a message the model can correct; it never fails the request.
- */
 
 const INVALID_LIMIT = 3;
 
@@ -92,7 +80,7 @@ export async function runResearch(run: Run): Promise<ModeResult & { intercepted?
     if (invalidStreak >= INVALID_LIMIT) break;
   }
 
-  // A limit was reached: one last call with tools disabled (PRD "Loop rules").
+  
   messages.push({ role: "user", content: FINAL_INSTRUCTION });
   const result = await streamModel({
     llm: ctx.llm,

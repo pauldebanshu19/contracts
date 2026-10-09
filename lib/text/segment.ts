@@ -1,11 +1,5 @@
 import type { Segment } from "./normalize";
 
-/**
- * Splits contract text into clauses on headings, then packs clauses into
- * chunks of about 1,000 tokens (PRD A4.1). The same clause list feeds version
- * comparison (B3.1), so retrieval and comparison agree on what a clause is.
- */
-
 export interface Clause extends Segment {
   /** "14.2", "Article IV", "Schedule 2", or "" for the preamble. */
   number: string;

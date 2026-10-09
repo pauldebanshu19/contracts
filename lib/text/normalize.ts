@@ -1,13 +1,3 @@
-/**
- * One normaliser for both sides of quote verification (PRD "Quote verification", step 3).
- *
- * The key drops everything that extraction or a model can legitimately get
- * wrong (whitespace, hyphenation, quote-mark style, case) and keeps everything
- * that carries meaning (letters, digits, punctuation). `map` takes every key
- * character back to the original string, so a match in the key can be shown in
- * the document's own words.
- */
-
 export interface Segment {
   start: number;
   end: number;

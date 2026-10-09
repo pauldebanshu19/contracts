@@ -24,10 +24,7 @@ export function clientIp(request: Request): string {
   return forwarded?.split(",")[0].trim() || request.headers.get("x-real-ip") || "local";
 }
 
-/**
- * A per-IP sliding window (PRD "Abuse"). In memory, which is enough for a
- * single process; it resets on restart.
- */
+
 const globals = globalThis as unknown as { __contractsRate?: Map<string, number[]> };
 const hits: Map<string, number[]> = (globals.__contractsRate ??= new Map());
 

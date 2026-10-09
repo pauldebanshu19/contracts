@@ -1,10 +1,7 @@
 import type { Significance } from "../db/schema";
 import type { ClausePair } from "./align";
 
-/**
- * The significance floor, set by rules before any model call (PRD B3.4).
- * The model may raise it but never lower it.
- */
+
 
 export const SIGNIFICANCE_ORDER: Significance[] = ["cosmetic", "low", "medium", "high"];
 

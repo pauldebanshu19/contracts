@@ -20,7 +20,7 @@ const documentColumns = {
   createdAt: documents.createdAt,
 };
 
-/** The library: every document, newest first, with its chats (newest first) and comparisons (PRD A1.8, A2.4). */
+
 export async function listDocuments(): Promise<DocumentDTO[]> {
   const rows = await db().select(documentColumns).from(documents).orderBy(desc(documents.createdAt));
   if (!rows.length) return [];

@@ -51,7 +51,7 @@ export const api = {
   compare: (a: string, b: string) => request<{ id: string }>("/api/comparisons", json({ a, b })).then((r) => r.id),
 };
 
-/** Client-side checks before upload; the server repeats them (PRD A1.1, A1.2). */
+
 export async function checkFile(file: File, maxUploadMb: number): Promise<string | null> {
   const ext = extensionOf(file.name);
   if (ext !== "pdf" && ext !== "docx") return "This isn't a PDF or Word file.";

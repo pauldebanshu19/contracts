@@ -9,11 +9,7 @@ import {
   type StreamEvent,
 } from "../types";
 
-/**
- * The single place an answer is assembled. Everything the browser sees goes
- * through `emit`, and the same state is saved as it grows, so an answer that
- * is stopped or abandoned mid-stream is already in the database (PRD A2.2, A2.3).
- */
+
 
 export interface AnswerSnapshot {
   content: string;
@@ -129,7 +125,7 @@ export class AnswerWriter {
     this.touch();
   }
 
-  /** Throw away the answer so far; it is being replaced (PRD A4.4). Steps are kept. */
+  
   reset(mode: AnswerMode): void {
     this.content = "";
     this.citations.clear();

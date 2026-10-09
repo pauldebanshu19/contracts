@@ -9,7 +9,7 @@ import { ChatView } from "./chat/chat-view";
 import { CompareView } from "./compare/compare-view";
 import { Library } from "./library";
 
-/** Three panes: library on the left, chat in the middle, viewer on the right (PRD "Interface"). */
+
 export function AppShell() {
   const params = useSearchParams();
   const router = useRouter();

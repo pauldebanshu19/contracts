@@ -182,7 +182,7 @@ export function ChatView({ chatId, config, onChanged, onMissing }: { chatId: str
 
   const stop = useCallback(() => abortRef.current?.abort(), []);
 
-  // Esc stops generation (PRD A2.2).
+
   useEffect(() => {
     if (!live) return;
     const onKey = (e: KeyboardEvent) => {

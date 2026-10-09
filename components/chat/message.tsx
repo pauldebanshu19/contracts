@@ -45,10 +45,9 @@ interface QuoteProps {
   block?: boolean;
 }
 
-/** Shared by the three states of a quote set as a block. No <p> inside: answer paragraphs carry their own margins. */
 const QUOTE_BLOCK = "my-3 block w-full rounded-r-lg border-l-[3px] px-4 py-3 text-left";
 
-/** A quote chip (PRD A3.2–A3.4): checking, verified (clickable, in the document's words) or unverified (struck through). */
+
 export function QuoteChip({ citation, pending, documents, onOpen, block }: QuoteProps) {
   if (!citation) {
     // Pending, or dropped when the answer was stopped: never the model's raw text.
@@ -145,7 +144,7 @@ function StepIcon({ step }: { step: AgentStep }) {
   return <Wrench className="h-3.5 w-3.5 text-text-3" />;
 }
 
-/** Live research steps (PRD Part C): open while the answer is written, collapsed after. */
+
 function Steps({ steps, streaming }: { steps: AgentStep[]; streaming: boolean }) {
   const [open, setOpen] = useState(false);
   if (!steps.length) return null;

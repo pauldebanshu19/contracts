@@ -2,11 +2,7 @@ import { eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { UUID, jsonError, ready } from "@/lib/http";
 
-/**
- * What the viewer needs besides the file: for PDFs the length of each page's
- * text and its item count, so the browser can check it rebuilt the same text
- * (PRD B1.2); for DOCX the sanitised HTML and its text length.
- */
+
 export async function GET(_request: Request, ctx: RouteContext<"/api/documents/[id]/view">) {
   await ready();
   const { id } = await ctx.params;

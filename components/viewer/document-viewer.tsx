@@ -16,7 +16,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.mjs";
 
 const PDF_OPTIONS = { cMapUrl: "/pdfjs/cmaps/", cMapPacked: true, standardFontDataUrl: "/pdfjs/standard_fonts/" };
 const ZOOMS = [0.5, 0.67, 0.8, 1, 1.25, 1.5, 1.75, 2];
-/** Pages either side of the visible ones that are rendered ahead (PRD B1.8). */
+
 const RENDER_AHEAD = 2;
 
 interface Props {
@@ -25,7 +25,6 @@ interface Props {
   onClose: () => void;
 }
 
-/** The document viewer (PRD B1): opens at the passage, highlights it, and steps between occurrences. */
 export function DocumentViewer({ target, document: doc, onClose }: Props) {
   const [meta, setMeta] = useState<ViewMeta | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -177,7 +176,7 @@ function PdfView({
   const targetPages = useMemo(() => [...byPage.keys()].sort((a, b) => a - b), [byPage]);
   const firstTarget = targetPages[0] ?? null;
 
-  // Fit the page to the pane, then apply zoom; redraw on resize (PRD B1.3).
+  
   useLayoutEffect(() => {
     const el = scroller.current;
     if (!el) return;
@@ -384,7 +383,7 @@ function DocxView({
   const body = useRef<HTMLDivElement>(null);
   const [boxes, setBoxes] = useState<Box[]>([]);
   const scrolledFor = useRef<string | null>(null);
-  // Sanitised on the server at ingestion and again here before it touches the DOM (PRD "Safety").
+  
   const html = useMemo(() => DOMPurify.sanitize(meta.html ?? "", { ALLOWED_TAGS: DOCX_TAGS, ALLOWED_ATTR: ["colspan", "rowspan"] }), [meta.html]);
 
   const draw = useCallback(() => {

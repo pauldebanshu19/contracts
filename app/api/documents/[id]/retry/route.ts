@@ -5,7 +5,7 @@ import { listDocuments } from "@/lib/documents/queries";
 import { UUID, jsonError, ready } from "@/lib/http";
 import { enqueue } from "@/lib/jobs/worker";
 
-/** Process a failed document again (PRD "Failed" state: Delete and Retry). */
+
 export async function POST(_request: Request, ctx: RouteContext<"/api/documents/[id]/retry">) {
   await ready();
   const { id } = await ctx.params;

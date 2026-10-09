@@ -1,7 +1,4 @@
-/**
- * File type by content, not by name (PRD A1.1). The same check runs in the
- * browser before upload and on the server after it, so it works on plain bytes.
- */
+
 
 export type DocKind = "pdf" | "docx";
 

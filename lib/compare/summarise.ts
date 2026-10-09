@@ -5,11 +5,7 @@ import { sectionLabel } from "../text/segment";
 import type { ClausePair } from "./align";
 import { maxSignificance, rank, type Floor } from "./significance";
 
-/**
- * The model's part of comparison (PRD B3.5, B3.6): a one-line summary, a
- * category and a significance for each change, in batches. Its significance is
- * combined with the rule floor and can only raise it.
- */
+
 
 export const CATEGORIES = [
   "liability", "payment", "term", "termination", "confidentiality", "intellectual_property", "data_protection",
@@ -159,7 +155,7 @@ export function topChanges(changes: Change[], limit = 7): Change[] {
     .slice(0, limit);
 }
 
-/** The 3–7 changes that matter most, readable without opening a clause (PRD B3.6). */
+
 export async function overallSummary(llm: Llm, changes: Change[], signal?: AbortSignal): Promise<string[]> {
   const top = topChanges(changes, 12);
   if (!top.length) return [];

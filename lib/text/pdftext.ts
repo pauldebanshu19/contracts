@@ -1,10 +1,3 @@
-/**
- * How a PDF page's text is assembled from pdf.js text items. The server uses
- * this at ingestion and the viewer uses it on the same items from the same
- * pdf.js version, so a page-relative offset means the same thing on both sides
- * (PRD A1.3, B1.2).
- */
-
 export interface PdfTextItem {
   str: string;
   hasEOL: boolean;

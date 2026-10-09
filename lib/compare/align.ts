@@ -1,12 +1,6 @@
 import type { Clause } from "../text/segment";
 
-/**
- * Clause alignment between two versions (PRD B3.1–B3.3).
- *
- * Pairs are found by number and heading first, then by text similarity, which
- * catches clauses that were renumbered or moved. What is left over was added
- * or removed.
- */
+
 
 export interface VersionClause extends Clause {
   /** Clause text without its own number, so renumbering doesn't read as a change. */

@@ -82,7 +82,6 @@ export type StreamEvent =
   | { type: "step"; step: AgentStep }
   /** A progress line such as "Reading pages 40–60…". */
   | { type: "status"; message: string }
-  /** Discard the answer shown so far: it is being replaced (PRD A4.4). */
   | { type: "reset"; mode: AnswerMode }
   | { type: "coverage"; coverage: Coverage }
   | { type: "done"; status: MessageStatus; answerStatus: AnswerStatus | null }

@@ -6,7 +6,6 @@ import { enqueue } from "@/lib/jobs/worker";
 
 const body = z.object({ a: z.uuid(), b: z.uuid() });
 
-/** Compare two versions (PRD B3). `a` is the earlier version, `b` the later one. */
 export async function POST(request: Request) {
   await ready();
   const parsed = body.safeParse(await request.json().catch(() => null));

@@ -7,14 +7,8 @@ Two outputs are treated as unacceptable, and most of the design exists to preven
 1. **An invented quote presented as real.** A quote is shown as verified only if code finds it word for word in the document.
 2. **"It's not in the contract" after reading only part of it.** Absence is only claimed after every readable page was read.
 
-Built to `Contract Analysis App — PRD.md`: all of Part A, all of Part B, and Part C option 2 (agentic document research).
+Built all of Part A, all of Part B, and Part C option 2 (agentic document research).
 
-<!--
-Add these two lines once they exist, then delete this comment:
-
-**Live app:** https://…
-**Demo video:** https://…
--->
 
 ## Screenshots
 
@@ -56,6 +50,105 @@ Add these two lines once they exist, then delete this comment:
 
 **Research mode (Part C, option 2)**
 - The model reads the contract step by step with five tools (outline, search, read a section, read pages, scan everything), and each step is shown live above the answer.
+
+## System architecture
+
+One Next.js process serves the interface and the API and runs the background jobs. Postgres holds all state, including the uploaded files. There is one thing to deploy and one thing to debug.
+
+```mermaid
+flowchart TB
+  subgraph Browser
+    UI["Library · Chat · Viewer · Compare"]
+  end
+  subgraph Server["One Next.js process (Node.js)"]
+    API["API routes"]
+    PIPE["Answer pipeline<br/>routing, retrieval, research loop"]
+    VERIFY["Stream parser and quote verifier"]
+    WORKER["Job worker<br/>extract, index, compare"]
+  end
+  DB[("Postgres<br/>files, text, chunk index,<br/>chats, citations, job queue")]
+  MODEL["Model API<br/>OpenAI-compatible"]
+  SPEECH["Deepgram<br/>speech to text"]
+
+  UI -->|"upload, question, audio"| API
+  API --> PIPE
+  PIPE -->|"prompt and chunks"| MODEL
+  MODEL -->|"answer with quotes"| VERIFY
+  VERIFY -->|"SSE: text, checked quotes, coverage"| UI
+  PIPE -->|"search chunks, save answer"| DB
+  API -->|"queue job"| DB
+  DB -->|"claim job"| WORKER
+  WORKER -->|"text, key, chunks"| DB
+  API -->|"recorded question"| SPEECH
+```
+
+The choices behind it:
+
+- **The verifier sits between the model and the browser.** Model output is parsed as it streams, and the only route from there to the browser passes through the verifier. No code path can show a quote that wasn't checked.
+- **No extra services.** Search is Postgres full-text search, the job queue is a Postgres table, and files are stored in Postgres, so the server needs no disk of its own.
+- **The same PDF engine on both sides.** pdf.js 6.3.289 extracts text on the server and renders pages in the browser. A position in the stored text is therefore a position in the text drawn on screen, which is what makes highlighting exact.
+- **Coverage is recorded in code.** Which pages the model was given is tracked by the server, not reported by the model.
+- **A persistent process, not serverless functions.** Background jobs and long answer streams run inside the server process, so it is meant for a host such as Railway or Render.
+
+### How a question is answered
+
+```mermaid
+flowchart TD
+  Q["Question"] --> R{{"Asks for every or any instance,<br/>or whether something exists?"}}
+  R -- no --> M{{"Research mode on?"}}
+  M -- no --> T["Targeted answer<br/>search the index, send the best chunks"]
+  M -- yes --> A["Research loop<br/>the model picks tools, capped at 8 rounds"]
+  T --> N{{"Model says not found<br/>while pages are still unread?"}}
+  A --> N
+  R -- yes --> FULL["Full read<br/>every chunk, in parallel batches"]
+  N -- yes --> FULL
+  N -- no --> V["Quotes held back and verified"]
+  FULL --> V
+  V --> OUT["Browser<br/>text, verified or unverified quotes, coverage line"]
+```
+
+The answer travels to the browser as Server-Sent Events: `text`, `cite_pending`, `citation`, `step`, `status`, `coverage`, `done` and `error`. The assistant message is created in the database before the first token and saved as it grows, which is why a stopped or abandoned answer is still there after a reload.
+
+### How a document is processed
+
+```mermaid
+flowchart LR
+  U["Upload"] --> C{"Type, signature<br/>and size ok?"}
+  C -- no --> X["Refused<br/>with a reason"]
+  C -- yes --> E["Background job<br/>extract text"]
+  E --> S{"Readable<br/>text?"}
+  S -- no --> O["Needs OCR"]
+  S -- yes --> K["Normalised key,<br/>clauses, chunks,<br/>full-text index"]
+  K --> D["Ready"]
+```
+
+The worker polls the job table every two seconds, runs two jobs at a time and writes a heartbeat every ten seconds. A job whose heartbeat stops is put back in the queue, so a restart loses nothing.
+
+### Stack
+
+| Layer | Choice | Why |
+| --- | --- | --- |
+| App | Next.js 16 (App Router), TypeScript, Tailwind | interface and API in one deploy |
+| PDF | `pdfjs-dist` on the server, `react-pdf` in the browser, pinned to one pdf.js version | text positions line up, so highlights need no coordinate maths |
+| DOCX | `mammoth` to HTML, text read with `linkedom`, sanitised with DOMPurify | the viewer and the verifier read identical text |
+| Database | Postgres 16 with Drizzle, built-in full-text search | one store, keyword search without another service |
+| Model | `openai` SDK pointed at `LLM_BASE_URL` | works with Groq, OpenRouter, OpenAI or a local model |
+| Validation | zod | tool arguments and API inputs |
+| Diff | `diff`, word level, inside matched clauses | shows what changed within a clause |
+| Speech | Deepgram `nova-3`, called from the server | the key stays off the browser |
+
+### Data model
+
+| Table | Holds |
+| --- | --- |
+| `documents` | name, type, size, status, processing progress, page count, unreadable pages, error message |
+| `document_content` | the original file, extracted text, normalised key and its map, page ranges, clause outline, DOCX HTML |
+| `chunks` | section, heading, text offsets, page range, text, full-text search vector |
+| `chats`, `chat_documents` | chats and the documents each is bound to, with aliases D1…Dn |
+| `messages` | content, status (streaming, complete, stopped, error), mode, coverage, research steps |
+| `citations` | one row per quote: verified or not, reason, displayed text, every match location |
+| `comparisons`, `comparison_changes` | the document pair and summary; per change: type, significance, category, both clause ranges |
+| `jobs` | the queue: type, target, status, attempts, heartbeat |
 
 ## How quote verification works
 
@@ -126,7 +219,7 @@ On a paid tier, set `LLM_TPM` to the account's limit (or `0` for none) and every
 
 **Not finished, or limited**
 - **Not deployed yet.**
-- **Speed on the free model tier**, as above. The PRD's target of a 150-page full read in under a minute needs a higher rate limit.
+- **Speed on the free model tier**, as above. The target of a 150-page full read in under a minute needs a higher rate limit.
 - **Word auto-numbering.** Clause numbers generated by Word (1.1, 1.2…) are not in the extracted text, so they don't appear in the viewer and a question like "what does clause 14.2 say" won't resolve in a .docx. Clauses are still found and quoted.
 - **Tested on generated contracts, not yet on a wide set of real ones.** Unusual layouts are the main risk; they fail safe, as unverified quotes.
 - **Asking across several documents** was exercised with a stand-in model, not yet with the live one.
@@ -171,5 +264,3 @@ Secrets live only in `.env`, which is git-ignored. `.env.example` is the templat
 | `app/api/` | HTTP routes: documents, chats (SSE), comparisons, transcription |
 | `components/` | library, chat, document viewer, comparison screen |
 | `drizzle/` | database migrations |
-
-One Next.js process serves the interface and the API and runs the background jobs, with Postgres holding all state: one thing to deploy and one thing to debug.
