@@ -1,7 +1,7 @@
 import { estimateRequestTokens, type ChatMessage } from "../llm/types";
 import { fitConversation, fitHistory } from "./budget";
 import { historyMessages, researchSystemPrompt } from "./prompts";
-import type { ModeResult, Run } from "./run";
+import { ANSWER_RESERVE_MS, type ModeResult, type Run } from "./run";
 import { streamModel } from "./stream";
 import { ToolRunner, toolDefinitions } from "./tools";
 
@@ -40,6 +40,8 @@ export async function runResearch(run: Run): Promise<ModeResult & { intercepted?
     const request = fit(true);
     spent += estimateRequestTokens(request, tools);
     if (spent > settings.tokenBudget) break;
+    // On a host that cuts long requests off, stop researching while there is still time to write the answer.
+    if (ctx.deadline !== undefined && Date.now() > ctx.deadline - ANSWER_RESERVE_MS) break;
 
     const result = await streamModel({
       llm: ctx.llm,

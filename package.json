@@ -12,6 +12,7 @@
     "db:up": "docker compose up -d"
   },
   "dependencies": {
+    "@vercel/functions": "^3.9.11",
     "clsx": "^2.1.1",
     "diff": "^9.0.0",
     "dompurify": "^3.4.16",
@@ -39,7 +40,6 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.0",
     "tailwindcss": "^4",
-    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

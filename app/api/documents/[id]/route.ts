@@ -5,7 +5,8 @@ import { dependentsOf, listDocuments } from "@/lib/documents/queries";
 import { UUID, jsonError, ready } from "@/lib/http";
 
 export async function GET(_request: Request, ctx: RouteContext<"/api/documents/[id]">) {
-  await ready();
+  const unavailable = await ready();
+  if (unavailable) return unavailable;
   const { id } = await ctx.params;
   if (!UUID.test(id)) return jsonError(404, "Document not found.");
   const document = (await listDocuments()).find((d) => d.id === id);
@@ -15,7 +16,8 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/documents/[
 
 
 export async function DELETE(_request: Request, ctx: RouteContext<"/api/documents/[id]">) {
-  await ready();
+  const unavailable = await ready();
+  if (unavailable) return unavailable;
   const { id } = await ctx.params;
   if (!UUID.test(id)) return jsonError(404, "Document not found.");
 

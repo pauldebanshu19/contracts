@@ -4,7 +4,8 @@ import { loadChat } from "@/lib/chat/store";
 import { UUID, jsonError, ready } from "@/lib/http";
 
 export async function GET(_request: Request, ctx: RouteContext<"/api/chats/[id]">) {
-  await ready();
+  const unavailable = await ready();
+  if (unavailable) return unavailable;
   const { id } = await ctx.params;
   if (!UUID.test(id)) return jsonError(404, "Chat not found.");
   const chat = await loadChat(id);
@@ -12,7 +13,8 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/chats/[id]"
 }
 
 export async function DELETE(_request: Request, ctx: RouteContext<"/api/chats/[id]">) {
-  await ready();
+  const unavailable = await ready();
+  if (unavailable) return unavailable;
   const { id } = await ctx.params;
   if (!UUID.test(id)) return jsonError(404, "Chat not found.");
   await db().delete(schema.chats).where(eq(schema.chats.id, id));

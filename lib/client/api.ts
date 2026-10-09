@@ -80,6 +80,7 @@ export function uploadFile(
         // fall through to the generic message
       }
       if (xhr.status >= 200 && xhr.status < 300 && body.document) resolve(body.document);
+      else if (xhr.status === 413 && !body.error) reject(new ApiError("This file is larger than the server accepts.", 413));
       else reject(new ApiError(body.error ?? `Upload failed (${xhr.status}).`, xhr.status));
     };
     xhr.onerror = () => reject(new ApiError("The upload was interrupted. Check your connection and try again.", 0));

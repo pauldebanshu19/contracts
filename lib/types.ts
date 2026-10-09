@@ -45,7 +45,7 @@ export interface Coverage {
   escalated?: boolean;
   /** Research stopped at its round or token limit. */
   stoppedAtLimit?: boolean;
-  /** Set when research mode wasn't available and the plain pipeline answered instead. */
+  /** Anything else about how the answer was produced that limits it, e.g. research wasn't available or a time limit was reached. */
   note?: string;
 }
 

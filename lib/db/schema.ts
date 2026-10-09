@@ -21,6 +21,14 @@ const tsvector = customType<{ data: string }>({ dataType: () => "tsvector" });
 const id = () => uuid("id").primaryKey().defaultRandom();
 const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
 
+/*
+ * Every table has row-level security switched on and no policies. The server connects as the
+ * tables' owner, which row-level security doesn't apply to, so nothing changes for it. Any other
+ * database role gets no rows. That matters on hosts such as Supabase, which put a public REST API in
+ * front of the database and grant its roles full access to new tables: without this, uploaded
+ * contracts would be readable through that API.
+ */
+
 export type DocumentStatus = "processing" | "ready" | "failed" | "needs_ocr";
 export type DocumentStage = "extracting" | "indexing";
 
@@ -41,7 +49,7 @@ export const documents = pgTable("documents", {
   errorCode: text("error_code"),
   errorMessage: text("error_message"),
   createdAt: createdAt(),
-});
+}).enableRLS();
 
 export const documentContent = pgTable("document_content", {
   documentId: uuid("document_id")
@@ -60,7 +68,7 @@ export const documentContent = pgTable("document_content", {
   itemCounts: jsonb("item_counts").$type<number[]>(),
   boilerplate: jsonb("boilerplate").$type<Segment[]>(),
   clauses: jsonb("clauses").$type<Clause[]>(),
-});
+}).enableRLS();
 
 export const chunks = pgTable(
   "chunks",
@@ -82,14 +90,14 @@ export const chunks = pgTable(
     ),
   },
   (t) => [index("chunks_document_ordinal").on(t.documentId, t.ordinal), index("chunks_tsv").using("gin", t.tsv)],
-);
+).enableRLS();
 
 export const chats = pgTable("chats", {
   id: id(),
   title: text("title").notNull().default("New chat"),
   createdAt: createdAt(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}).enableRLS();
 
 export const chatDocuments = pgTable(
   "chat_documents",
@@ -105,7 +113,7 @@ export const chatDocuments = pgTable(
     position: integer("position").notNull(),
   },
   (t) => [primaryKey({ columns: [t.chatId, t.documentId] }), index("chat_documents_document").on(t.documentId)],
-);
+).enableRLS();
 
 export type MessageStatus = "streaming" | "complete" | "stopped" | "error";
 export type AnswerMode = "targeted" | "full_scan" | "research";
@@ -129,7 +137,7 @@ export const messages = pgTable(
     createdAt: createdAt(),
   },
   (t) => [index("messages_chat").on(t.chatId, t.createdAt)],
-);
+).enableRLS();
 
 export const citations = pgTable(
   "citations",
@@ -151,7 +159,7 @@ export const citations = pgTable(
     primaryMatch: integer("primary_match").notNull().default(-1),
   },
   (t) => [index("citations_message").on(t.messageId, t.ordinal)],
-);
+).enableRLS();
 
 export type ComparisonStatus = "processing" | "ready" | "failed";
 
@@ -171,7 +179,7 @@ export const comparisons = pgTable("comparisons", {
   notice: text("notice"),
   error: text("error"),
   createdAt: createdAt(),
-});
+}).enableRLS();
 
 export type ChangeType = "cosmetic" | "modified" | "added" | "removed" | "moved";
 export type Significance = "high" | "medium" | "low" | "cosmetic";
@@ -202,7 +210,7 @@ export const comparisonChanges = pgTable(
     bEnd: integer("b_end"),
   },
   (t) => [index("comparison_changes_comparison").on(t.comparisonId, t.ordinal)],
-);
+).enableRLS();
 
 export type JobType = "ingest" | "compare";
 export type JobStatus = "queued" | "running" | "done" | "failed";
@@ -220,4 +228,4 @@ export const jobs = pgTable(
     createdAt: createdAt(),
   },
   (t) => [index("jobs_status").on(t.status, t.createdAt)],
-);
+).enableRLS();

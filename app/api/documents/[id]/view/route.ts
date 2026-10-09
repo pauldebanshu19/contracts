@@ -4,7 +4,8 @@ import { UUID, jsonError, ready } from "@/lib/http";
 
 
 export async function GET(_request: Request, ctx: RouteContext<"/api/documents/[id]/view">) {
-  await ready();
+  const unavailable = await ready();
+  if (unavailable) return unavailable;
   const { id } = await ctx.params;
   if (!UUID.test(id)) return jsonError(404, "Document not found.");
 

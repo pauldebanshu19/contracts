@@ -88,7 +88,7 @@ The choices behind it:
 - **No extra services.** Search is Postgres full-text search, the job queue is a Postgres table, and files are stored in Postgres, so the server needs no disk of its own.
 - **The same PDF engine on both sides.** pdf.js 6.3.289 extracts text on the server and renders pages in the browser. A position in the stored text is therefore a position in the text drawn on screen, which is what makes highlighting exact.
 - **Coverage is recorded in code.** Which pages the model was given is tracked by the server, not reported by the model.
-- **A persistent process, not serverless functions.** Background jobs and long answer streams run inside the server process, so it is meant for a host such as Railway or Render.
+- **One long-lived process, or serverless functions.** On an ordinary Node host a worker loop inside the server runs the jobs. On Vercel, where code runs only while a request is handled, each job runs after the response of the request that queued it. [Deploying](#deploying) lists what Vercel's limits change.
 
 ### How a question is answered
 
@@ -199,6 +199,28 @@ npm run dev                   # http://localhost:3000
 
 Database migrations run when the server starts. Background jobs run in the same process, so there is nothing else to start. For production: `npm run build` then `npm start`, with `DATABASE_URL` pointing at a Postgres database.
 
+## Deploying
+
+The app needs a Postgres database and the variables under [Configuration](#configuration). It creates its own tables the first time it starts.
+
+**On a host that keeps one Node process running** (Railway, Render, a VM): `npm run build`, then `npm start`. A worker loop inside the server runs the jobs and nothing below applies.
+
+**On Vercel with a Supabase database:**
+
+- Set `DATABASE_URL` to Supabase's *Transaction pooler* connection string with `?sslmode=no-verify` added. The direct connection has no IPv4 address. Supabase signs its own certificate, which this Postgres driver rejects under `sslmode=require`; `no-verify` still encrypts the connection. Characters such as `@` in the password must be percent-encoded.
+- `vercel.json` runs the functions in Sydney (`syd1`), next to the database this was set up with. Change it if the database is somewhere else.
+- Every table has row-level security switched on with no policies, because Supabase puts a public REST API in front of new tables. The app connects as the tables' owner and is unaffected; that API returns no rows.
+
+What Vercel's limits change:
+
+| Limit on Vercel | What the app does |
+| --- | --- |
+| Code runs only while a request is handled | A job runs after the response of the request that queued it. If that request is cut off, the page's progress polling starts the job again. |
+| 4.5 MB per request body | Uploads are capped at 4 MB (25 MB elsewhere), with a message saying so. |
+| 300 seconds per request (Hobby plan) | A full read stops in time to write an answer from the pages it got through. The answer is marked partial and the coverage line gives the page count and the reason. A comparison keeps rule-based summaries for changes the model didn't reach, and says how many. |
+
+This mode was tested on a local production build (`JOB_RUNNER=request`) against Supabase's transaction pooler: upload, processing, recovery of an interrupted job, an answer with a verified quote, and a full read cut short by a time limit.
+
 ## Model provider and its limits
 
 Any OpenAI-compatible API works (`LLM_BASE_URL`, `LLM_MODEL`). It is set up for Groq: `openai/gpt-oss-120b` for answers and `openai/gpt-oss-20b` for full-read batches.
@@ -206,7 +228,7 @@ Any OpenAI-compatible API works (`LLM_BASE_URL`, `LLM_MODEL`). It is set up for 
 Groq's free tier allows 8,000 tokens per minute per model and refuses any single request larger than that. With `LLM_TPM=8000` the app sizes every request to fit, paces requests, and waits out rate-limit responses. The effect:
 
 - Targeted answers take 1–3 seconds and are built from about 4 chunks. The coverage line reports exactly what was sent.
-- **A full read of a 150-page contract takes about 15–20 minutes** on the free tier. The progress line shows the pages being read.
+- **A full read of a 150-page contract takes about 15–20 minutes** on the free tier. The progress line shows the pages being read. On Vercel a request ends after 5 minutes, so there a full read on the free tier covers the first part of a long contract and the answer says how much was read.
 - Research mode is off by default at this limit, because each round re-sends the conversation. The toggle is in the question box.
 
 On a paid tier, set `LLM_TPM` to the account's limit (or `0` for none) and everything sizes back up.
@@ -218,7 +240,7 @@ On a paid tier, set `LLM_TPM` to the account's limit (or `0` for none) and every
 **Finished and checked end to end** with the real model on generated contracts from 3 to 150 pages: upload and each failure message; streaming, Stop and saved partial answers; verified and unverified quotes; coverage lines; the automatic full read before "not found"; highlighting in PDF and Word, including a quote on page 140 of 150 opened in about a second; comparison ranking a raised liability cap High and a reworded clause Low; research mode with live steps.
 
 **Not finished, or limited**
-- **Not deployed yet.**
+- **On Vercel, limits apply:** 4 MB per file and 5 minutes per answer or comparison. See [Deploying](#deploying).
 - **Speed on the free model tier**, as above. The target of a 150-page full read in under a minute needs a higher rate limit.
 - **Word auto-numbering.** Clause numbers generated by Word (1.1, 1.2…) are not in the extracted text, so they don't appear in the viewer and a question like "what does clause 14.2 say" won't resolve in a .docx. Clauses are still found and quoted.
 - **Tested on generated contracts, not yet on a wide set of real ones.** Unusual layouts are the main risk; they fail safe, as unverified quotes.
@@ -240,7 +262,9 @@ On a paid tier, set `LLM_TPM` to the account's limit (or `0` for none) and every
 | `LLM_REASONING_EFFORT` | unset | `low`, `medium` or `high`, for reasoning models |
 | `LLM_TPM` | `0` (no limit) | the account's tokens-per-minute limit |
 | `DEEPGRAM_API_KEY` | unset | enables voice input |
-| `MAX_UPLOAD_MB` | `25` | |
+| `MAX_UPLOAD_MB` | `25` | 4 at most on Vercel |
+| `JOB_RUNNER` | `worker`, or `request` on Vercel | `request` runs each job inside the request that queued it |
+| `REQUEST_TIME_LIMIT_S` | `0` (none; Vercel reports its own) | longest one request may run on a host that cuts requests off |
 | `MAX_DOCUMENTS` | `50` | the URL is public with no login, so storage is capped |
 | `AGENT_MAX_ROUNDS` | `8` | research rounds per question |
 | `SCAN_CONCURRENCY` | `4` | parallel batches in a full read |

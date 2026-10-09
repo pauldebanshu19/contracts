@@ -196,6 +196,8 @@ function unreadCaveats(run: Run): string[] {
     });
 }
 
+const TIME_LIMIT_NOTE = "Reading stopped at this server's time limit for one answer, before everything was read";
+
 async function runFullScan(run: Run): Promise<ModeResult> {
   const { ctx, tracker } = run;
   const scan = await scanInto(run, run.docs, ctx.question);
@@ -219,6 +221,12 @@ async function runFullScan(run: Run): Promise<ModeResult> {
       );
       return { status: "not_found" };
     }
+    if (scan.timedOut) {
+      ctx.writer.text(
+        "Nothing relevant was found in the part that was read (listed below). This server limits how long one answer may take, and that ran out before the rest could be read, so this is not a complete answer.",
+      );
+      return { status: "partial", extras: { note: TIME_LIMIT_NOTE } };
+    }
     ctx.writer.text(
       "Nothing relevant was found in the parts that were read, but some parts could not be read (listed below), so this is not a complete answer.",
     );
@@ -230,6 +238,11 @@ async function runFullScan(run: Run): Promise<ModeResult> {
   const history = fitHistory(ctx.history, budget * 0.15);
   const system = answerSystemPrompt(run.docs);
   const caveats = unreadCaveats(run);
+  if (scan.timedOut) {
+    caveats.push(
+      "The time limit was reached before every part was read. Do not claim that something is absent or that a list is complete; say that the answer covers only the part that was read, and use <status>partial</status>.",
+    );
+  }
   const fixed = estimateRequestTokens([
     { role: "system", content: system },
     ...historyMessages(history),
@@ -237,14 +250,13 @@ async function runFullScan(run: Run): Promise<ModeResult> {
   ]);
   // Passages in document order, as many as one request can carry. If some don't fit, the model and the reader are told.
   const kept = takeWithin(scan.excerpts, (e) => estimateTokens(`${e.label} ${e.text} ${e.note}`) + 25, budget - fixed - 200);
-  let extras: ModeResult["extras"];
+  let extras: ModeResult["extras"] = scan.timedOut ? { note: TIME_LIMIT_NOTE } : undefined;
   if (kept.length < scan.excerpts.length) {
     caveats.push(
       `Only ${kept.length} of the ${scan.excerpts.length} relevant passages that were found fit in this request. Say that the answer may be incomplete and use <status>partial</status>.`,
     );
-    extras = {
-      note: `${scan.excerpts.length} relevant passages were found, but only the first ${kept.length} fit in the model's request size limit, so this answer may be incomplete`,
-    };
+    const fit = `${scan.excerpts.length} relevant passages were found, but only the first ${kept.length} fit in the model's request size limit, so this answer may be incomplete`;
+    extras = { note: extras?.note ? `${extras.note}. ${fit}` : fit };
   }
   const messages: ChatMessage[] = [
     { role: "system", content: system },
@@ -258,7 +270,9 @@ async function runFullScan(run: Run): Promise<ModeResult> {
     verify: run.verify,
     signal: ctx.signal,
   });
-  return { status: result.status ?? "answered", aborted: result.aborted, extras };
+  const status = result.status ?? "answered";
+  // An answer built from part of the document is never reported as the whole answer.
+  return { status: scan.timedOut && status === "answered" ? "partial" : status, aborted: result.aborted, extras };
 }
 
 export async function answerQuestion(ctx: AnswerContext): Promise<void> {

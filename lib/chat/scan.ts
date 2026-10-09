@@ -36,6 +36,8 @@ export interface ScanResult {
    * confirmed or located. Not evidence of absence: the caller must not claim it.
    */
   uncertain: ScanBatch[];
+  /** Reading stopped at the time limit with batches still unread. Those are in neither `read` nor `failed`. */
+  timedOut: boolean;
 }
 
 export interface ScanOptions {
@@ -45,6 +47,8 @@ export interface ScanOptions {
   signal: AbortSignal;
   concurrency: number;
   batchTokens: number;
+  /** Stop reading at this time, leaving the rest unread. For hosts that cut long requests off. */
+  stopAt?: number;
   onBatchStart?: (batch: ScanBatch, index: number, total: number) => void;
 }
 
@@ -220,7 +224,9 @@ async function runBatch(batch: ScanBatch, options: ScanOptions): Promise<BatchOu
 
 export async function scanDocuments(options: ScanOptions): Promise<ScanResult> {
   const batches = makeBatches(options.docs, options.batchTokens);
-  const result: ScanResult = { excerpts: [], read: new Map(), failed: new Map(), uncertain: [] };
+  const result: ScanResult = { excerpts: [], read: new Map(), failed: new Map(), uncertain: [], timedOut: false };
+  const timeUp = options.stopAt === undefined ? undefined : AbortSignal.timeout(Math.max(0, options.stopAt - Date.now()));
+  const batchOptions: ScanOptions = timeUp ? { ...options, signal: AbortSignal.any([options.signal, timeUp]) } : options;
   const record = (map: Map<string, number[]>, batch: ScanBatch) => {
     const list = map.get(batch.doc.id) ?? [];
     list.push(...batch.chunks.map((c) => c.ordinal));
@@ -234,17 +240,27 @@ export async function scanDocuments(options: ScanOptions): Promise<ScanResult> {
       if (index >= batches.length) return;
       const batch = batches[index];
       if (options.signal.aborted) return;
+      if (timeUp?.aborted) {
+        result.timedOut = true;
+        return;
+      }
       options.onBatchStart?.(batch, index, batches.length);
 
       let done = false;
       for (let attempt = 0; attempt < ATTEMPTS && !done; attempt++) {
         try {
-          const outcome = await runBatch(batch, options);
+          const outcome = await runBatch(batch, batchOptions);
           result.excerpts.push(...outcome.excerpts);
           if (outcome.uncertain) result.uncertain.push(batch);
           record(result.read, batch);
           done = true;
         } catch (error) {
+          if (options.signal.aborted) throw error;
+          // Out of time part-way through this batch: it stays unread, which is not a failure.
+          if (timeUp?.aborted) {
+            result.timedOut = true;
+            return;
+          }
           if (isAbort(error, options.signal)) throw error;
           if (attempt === ATTEMPTS - 1) {
             console.error(`[scan] batch ${index + 1}/${batches.length} failed:`, error);

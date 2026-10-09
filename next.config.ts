@@ -33,6 +33,16 @@ const nextConfig: NextConfig = {
   // Loaded with Node's own require on the server: pdf.js reads its worker, fonts and
   // character maps from disk, and these packages are not written for bundling.
   serverExternalPackages: ["pdfjs-dist", "mammoth", "linkedom"],
+  // Files the server reads from disk at run time, which import tracing can't see: the database
+  // migrations and pdf.js's worker, character maps and fonts. Hosts that deploy only traced files need this.
+  outputFileTracingIncludes: {
+    "/**": [
+      "./drizzle/**/*",
+      "./node_modules/pdfjs-dist/legacy/build/**/*",
+      "./node_modules/pdfjs-dist/cmaps/**/*",
+      "./node_modules/pdfjs-dist/standard_fonts/**/*",
+    ],
+  },
   turbopack: {
     rules: {
       "*.css": {

@@ -7,7 +7,8 @@ import { enqueue } from "@/lib/jobs/worker";
 
 
 export async function POST(_request: Request, ctx: RouteContext<"/api/documents/[id]/retry">) {
-  await ready();
+  const unavailable = await ready();
+  if (unavailable) return unavailable;
   const { id } = await ctx.params;
   if (!UUID.test(id)) return jsonError(404, "Document not found.");
 

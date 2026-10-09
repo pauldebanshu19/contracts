@@ -7,6 +7,7 @@ import { activeAnswers, chatDocumentsOf, databaseSink, recentHistory } from "@/l
 import { AnswerWriter } from "@/lib/chat/writer";
 import { config, llmConfigured } from "@/lib/config";
 import { db, schema } from "@/lib/db";
+import { requestDeadline } from "@/lib/deadline";
 import { loadDocument } from "@/lib/documents/content";
 import { UUID, jsonError, rateLimited, ready } from "@/lib/http";
 import { getLlm } from "@/lib/llm/openai";
@@ -22,7 +23,9 @@ const HEARTBEAT_MS = 15_000;
 
 
 export async function POST(request: Request, ctx: RouteContext<"/api/chats/[id]/messages">) {
-  await ready();
+  const deadline = requestDeadline();
+  const unavailable = await ready();
+  if (unavailable) return unavailable;
   const { id: chatId } = await ctx.params;
   if (!UUID.test(chatId)) return jsonError(404, "Chat not found.");
 
@@ -95,6 +98,7 @@ export async function POST(request: Request, ctx: RouteContext<"/api/chats/[id]/
         writer,
         signal: abort.signal,
         research,
+        deadline,
       })
         .catch((error) => console.error("[chat] unexpected:", error))
         .finally(() => {

@@ -12,11 +12,14 @@ import { batches, guessCategory, overallSummary, ruleSummary, summariseBatch, su
 
 const { comparisons, comparisonChanges } = schema;
 
+/** Time kept back, on a host with a request time limit, for saving the result. */
+const SAVE_RESERVE_MS = 25_000;
+
 async function setStage(id: string, stage: string) {
   await db().update(comparisons).set({ stage }).where(eq(comparisons.id, id));
 }
 
-export async function runComparison(id: string, heartbeat: () => Promise<void>): Promise<void> {
+export async function runComparison(id: string, heartbeat: () => Promise<void>, deadline?: number): Promise<void> {
   const [row] = await db().select().from(comparisons).where(eq(comparisons.id, id));
   if (!row) return;
   await db().update(comparisons).set({ status: "processing", error: null, notice: null }).where(eq(comparisons.id, id));
@@ -48,27 +51,49 @@ export async function runComparison(id: string, heartbeat: () => Promise<void>):
   } else if (forModel.length) {
     const llm = getLlm();
     const groups = summaryBatches(forModel, promptTokenBudget());
+    // With a time limit, whatever the model hasn't summarised by then keeps its rule-based summary and rank.
+    const timeUp = deadline === undefined ? undefined : AbortSignal.timeout(Math.max(0, deadline - Date.now() - SAVE_RESERVE_MS));
     let failed = 0;
+    let unreached = 0;
     let done = 0;
     for (const group of groups) {
+      if (timeUp?.aborted) {
+        unreached += group.length;
+        continue;
+      }
       await setStage(id, `Summarising changes ${done + 1}–${done + group.length} of ${forModel.length}`);
       done += group.length;
       await heartbeat();
       try {
-        await summariseBatch(llm, group);
+        await summariseBatch(llm, group, timeUp);
       } catch (error) {
+        if (timeUp?.aborted) {
+          unreached += group.length;
+          continue;
+        }
         failed += group.length;
         console.error("[compare] batch failed:", error);
       }
     }
-    if (failed) notice = `${failed} of ${forModel.length} changes could not be summarised by the model; they show rule-based summaries and ranks.`;
+    const notices: string[] = [];
+    if (failed) notices.push(`${failed} of ${forModel.length} changes could not be summarised by the model; they show rule-based summaries and ranks.`);
+    if (unreached) {
+      notices.push(
+        `${unreached} of ${forModel.length} changes show rule-based summaries and ranks: this server's time limit for one comparison ran out before the model reached them.`,
+      );
+    }
+    if (notices.length) notice = notices.join(" ");
 
-    await setStage(id, "Writing the summary");
-    try {
-      summary = await overallSummary(llm, changes);
-    } catch (error) {
-      console.error("[compare] summary failed:", error);
-      notice ??= error instanceof LlmError ? error.message : "The overall summary couldn't be written.";
+    if (!timeUp?.aborted) {
+      await setStage(id, "Writing the summary");
+      try {
+        summary = await overallSummary(llm, changes, timeUp);
+      } catch (error) {
+        if (!timeUp?.aborted) {
+          console.error("[compare] summary failed:", error);
+          notice ??= error instanceof LlmError ? error.message : "The overall summary couldn't be written.";
+        }
+      }
     }
   }
   if (!summary.length) summary = topChanges(changes).map((c) => c.summary);

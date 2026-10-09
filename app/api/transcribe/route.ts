@@ -8,7 +8,8 @@ const AUDIO_TYPE = /^audio\/(webm|ogg|mp4|mpeg|wav|x-wav|aac|x-m4a)(;.*)?$/i;
 
 /** Turn a recorded question into text. The browser sends the raw recording; the reply is the transcript. */
 export async function POST(request: Request) {
-  await ready();
+  const unavailable = await ready();
+  if (unavailable) return unavailable;
   if (!voiceConfigured()) return jsonError(503, "Voice input isn't configured on the server.");
   const limited = rateLimited(request, "transcribe", config().RATE_LIMIT_TRANSCRIPTIONS_PER_HOUR);
   if (limited) return limited;

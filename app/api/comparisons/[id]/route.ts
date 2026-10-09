@@ -15,7 +15,8 @@ async function docSummary(id: string) {
 
 
 export async function GET(_request: Request, ctx: RouteContext<"/api/comparisons/[id]">) {
-  await ready();
+  const unavailable = await ready();
+  if (unavailable) return unavailable;
   const { id } = await ctx.params;
   if (!UUID.test(id)) return jsonError(404, "Comparison not found.");
 
@@ -57,7 +58,8 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/comparisons
 }
 
 export async function DELETE(_request: Request, ctx: RouteContext<"/api/comparisons/[id]">) {
-  await ready();
+  const unavailable = await ready();
+  if (unavailable) return unavailable;
   const { id } = await ctx.params;
   if (!UUID.test(id)) return jsonError(404, "Comparison not found.");
   await db().delete(schema.comparisons).where(eq(schema.comparisons.id, id));

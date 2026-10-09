@@ -32,6 +32,14 @@ const schema = z.object({
   SCAN_CONCURRENCY: number(4),
   SCAN_BATCH_TOKENS: number(12_000),
   RATE_LIMIT_UPLOADS_PER_HOUR: number(30),
+  /**
+   * How uploads and comparisons are processed. "worker": a loop inside one long-lived server
+   * process. "request": after the response of the request that queued the job, for hosts that
+   * only run code while a request is being handled. Unset picks "request" on Vercel.
+   */
+  JOB_RUNNER: z.enum(["", "worker", "request"]).default(""),
+  /** Longest one request may run, in seconds, on a host that cuts requests off. 0: no limit (Vercel reports its own). */
+  REQUEST_TIME_LIMIT_S: number(0, 0),
   RATE_LIMIT_QUESTIONS_PER_HOUR: number(120),
 });
 
@@ -77,3 +85,17 @@ export function researchByDefault(): boolean {
 }
 
 export const MAX_DOCS_PER_CHAT = 5;
+
+const onVercel = () => process.env.VERCEL === "1";
+
+/** True when there is no long-lived process to run a worker loop in. */
+export function jobsRunInRequests(): boolean {
+  const mode = config().JOB_RUNNER;
+  return mode ? mode === "request" : onVercel();
+}
+
+/** Vercel refuses a request body over 4.5 MB before it reaches the server, so uploads stop short of that there. */
+export function maxUploadMb(): number {
+  const limit = config().MAX_UPLOAD_MB;
+  return onVercel() ? Math.min(limit, 4) : limit;
+}

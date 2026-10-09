@@ -7,7 +7,8 @@ import { enqueue } from "@/lib/jobs/worker";
 const body = z.object({ a: z.uuid(), b: z.uuid() });
 
 export async function POST(request: Request) {
-  await ready();
+  const unavailable = await ready();
+  if (unavailable) return unavailable;
   const parsed = body.safeParse(await request.json().catch(() => null));
   if (!parsed.success || parsed.data.a === parsed.data.b) return jsonError(400, "Choose two different documents to compare.");
   const { a, b } = parsed.data;

@@ -10,7 +10,8 @@ const body = z.object({
 
 
 export async function POST(request: Request) {
-  await ready();
+  const unavailable = await ready();
+  if (unavailable) return unavailable;
   const parsed = body.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return jsonError(400, `Choose between 1 and ${MAX_DOCS_PER_CHAT} documents.`);
   const ids = [...new Set(parsed.data.documentIds)];

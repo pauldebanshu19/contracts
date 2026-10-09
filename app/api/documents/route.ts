@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { count } from "drizzle-orm";
-import { config } from "@/lib/config";
+import { config, maxUploadMb } from "@/lib/config";
 import { db, schema } from "@/lib/db";
 import { listDocuments } from "@/lib/documents/queries";
 import { sniff } from "@/lib/ingest/sniff";
@@ -8,21 +8,24 @@ import { jsonError, rateLimited, ready } from "@/lib/http";
 import { enqueue } from "@/lib/jobs/worker";
 
 export async function GET() {
-  await ready();
+  const unavailable = await ready();
+  if (unavailable) return unavailable;
   return Response.json({ documents: await listDocuments() });
 }
 
 
 export async function POST(request: Request) {
-  await ready();
+  const unavailable = await ready();
+  if (unavailable) return unavailable;
   const c = config();
   const limited = rateLimited(request, "upload", c.RATE_LIMIT_UPLOADS_PER_HOUR);
   if (limited) return limited;
 
   // Reject an oversized body before reading it, when the size is declared.
   const declared = Number(request.headers.get("content-length") ?? 0);
-  const maxBytes = c.MAX_UPLOAD_MB * 1024 * 1024;
-  if (declared > maxBytes + 64 * 1024) return jsonError(413, `This file is larger than ${c.MAX_UPLOAD_MB} MB.`);
+  const maxMb = maxUploadMb();
+  const maxBytes = maxMb * 1024 * 1024;
+  if (declared > maxBytes + 64 * 1024) return jsonError(413, `This file is larger than ${maxMb} MB.`);
 
   let file: File | null = null;
   try {
@@ -33,7 +36,7 @@ export async function POST(request: Request) {
     return jsonError(400, "The upload didn't arrive complete. Try again.");
   }
   if (!file) return jsonError(400, "No file was attached.");
-  if (file.size > maxBytes) return jsonError(413, `This file is larger than ${c.MAX_UPLOAD_MB} MB.`);
+  if (file.size > maxBytes) return jsonError(413, `This file is larger than ${maxMb} MB.`);
   if (file.size === 0) return jsonError(400, "This file is empty.");
 
   const bytes = new Uint8Array(await file.arrayBuffer());

@@ -38,8 +38,13 @@ export interface AnswerContext {
   signal: AbortSignal;
   /** Use the tool-using research loop for questions that don't need a full scan. */
   research: boolean;
+  /** When the host will cut this request off, if it does. Reading stops early enough to still write an answer. */
+  deadline?: number;
   settings?: Partial<AnswerSettings>;
 }
+
+/** Time kept back, on a host with a request time limit, for writing the answer once reading has stopped. */
+export const ANSWER_RESERVE_MS = 90_000;
 
 export interface RunDoc extends AnswerDoc, PromptDoc {
   chunks: ChunkRow[];
@@ -95,6 +100,7 @@ export async function scanInto(run: Run, docs: RunDoc[], question: string): Prom
     signal: ctx.signal,
     concurrency: settings.scanConcurrency,
     batchTokens: settings.scanBatchTokens,
+    stopAt: ctx.deadline === undefined ? undefined : ctx.deadline - ANSWER_RESERVE_MS,
     onBatchStart: (batch) => ctx.writer.status(batchLabel(batch, run.docs.length > 1)),
   });
   for (const [id, ordinals] of scan.read) tracker.markRead(id, ordinals);
