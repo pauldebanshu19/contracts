@@ -1,0 +1,20 @@
+# Local Postgres for development. pgvector is included so embeddings can be added later.
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: contracts
+      POSTGRES_PASSWORD: contracts
+      POSTGRES_DB: contracts
+    ports:
+      - "5433:5432"
+    volumes:
+      - contracts_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U contracts -d contracts"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  contracts_pg:
